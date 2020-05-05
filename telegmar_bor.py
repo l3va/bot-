@@ -9,7 +9,7 @@ bot = telebot.TeleBot(bot_token)
 actions = {}
 action = []
 
-
+#ssssss
 @bot.message_handler(commands=['start'])
 def start(mess):
     chat_id = mess.chat.id
