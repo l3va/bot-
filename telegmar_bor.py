@@ -1,5 +1,8 @@
 from datetime import datetime
 
+import schedule
+import time
+
 import telebot
 from telebot import types
 import shelve
@@ -115,6 +118,7 @@ def a(mess):
 
 def extract_name_action(message):
     action.append(message.text)
+    user_action = message.text
     echo = bot.send_message(message.chat.id,
                             'Please, add time of action\nPlease write time as day/month/year hh:mm:ss')
 
@@ -173,12 +177,35 @@ def extract_time_action(message):
 
 
 
+
+
+
+
+
+
     print("good")
     print(message.text)
     action.append(message.text)
     actions.update({action[0]: action[1]})
     action.clear()
     print("end function")
+
+    def job():
+        now = datetime.now()
+        current_time = now.strftime("%x:%X")
+        print(current_time)
+        if user_time == current_time:
+            print("sadadassd")
+            bot.send_message(message.chat.id, actions.keys())
+
+    schedule.every(1).seconds.do(job)
+    schedule.run_pending()
+    while True:
+        schedule.run_pending()
+        time.sleep(0)
+
+
+# 05/07/20:21:27:20
 
 
 bot.polling(none_stop=True, interval=0)
