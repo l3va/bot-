@@ -21,11 +21,11 @@ def start(mess):
     button_add = types.KeyboardButton('Add action')
     button_remove = types.KeyboardButton('Remove action')
     button_remove_all = types.KeyboardButton('Remove all actions')
-    button_change_name = types.KeyboardButton('Change Name your action')
-    button_change_time = types.KeyboardButton('Change time your action')
+    button_change_name = types.KeyboardButton('Change name of your action')
+    button_change_time = types.KeyboardButton('Change time of your action')
     button_review = types.KeyboardButton('Review your actions')
     markup.add(button_add, button_remove, button_remove_all, button_change_name, button_change_time, button_review)
-    bot.send_message(chat_id, "Hello, I'm bot which remembering you plan, choose your action ", reply_markup=markup)
+    bot.send_message(chat_id, "Hi, this is time-manager just for you! Here you can schedule your actions, and in defined time we will remind you of planned action! Follow the instructions(give attention to the way of date writing). Good luck!", reply_markup=markup)
 
 
 @bot.message_handler(func=lambda mess: mess.text == 'Remove action' and mess.content_type == 'text')
@@ -39,6 +39,7 @@ def remove_action(mess):
 def extracts_name_action(message):
     if message.text in actions.keys():
         actions.pop(message.text)
+        bot.send_message(message.chat.id, "action successfully deleted")
     else:
         bot.send_message(message.chat.id, "incorrect action, please try again write action")
 
@@ -47,7 +48,7 @@ def extracts_name_action(message):
 def remove_all_actions(mess):
     chat_id = mess.chat.id
     markup = types.ReplyKeyboardMarkup()
-    echo = bot.send_message(chat_id, 'Are you sure ?\n Write one more try yes or no ', reply_markup=markup)
+    echo = bot.send_message(chat_id, 'Are you sure ?\n Write yes or no ', reply_markup=markup)
     bot.register_next_step_handler(message=echo, callback=confirm_clear_dict)
 
 
@@ -58,14 +59,26 @@ def confirm_clear_dict(message):
     elif (message.text == "no") or (message.text == "NO"):
         bot.send_message(message.chat.id, "you denied remove all")
     else:
-        bot.send_message(message.chat.id, "you don't confirm remove all")
+        bot.send_message(message.chat.id, "you do not confirm removing all actions, wrong input, write only: yes or no")
+        chat_id = message.chat.id
+        markup = types.ReplyKeyboardMarkup()
+        echo = bot.send_message(chat_id, 'Are you sure ?\n Write yes or no ', reply_markup=markup)
+        bot.register_next_step_handler(message=echo, callback=confirm_clear_dict2)
+def confirm_clear_dict2(message):
+        if (message.text == "yes") or (message.text == "Yes"):
+            actions.clear()
+            bot.send_message(message.chat.id, "all actions are deleted")
+        elif (message.text == "no") or (message.text == "NO"):
+            bot.send_message(message.chat.id, "you denied remove all")
+        else:
+            bot.send_message(message.chat.id, "wrong input, choose another option")
 
 
-@bot.message_handler(func=lambda mess: mess.text == 'Change Name your action' and mess.content_type == 'text')
+@bot.message_handler(func=lambda mess: mess.text == 'Change name of your action' and mess.content_type == 'text')
 def change_action(mess):
     chat_id = mess.chat.id
     markup = types.ReplyKeyboardMarkup()
-    echo = bot.send_message(chat_id, 'Write what you want change', reply_markup=markup)
+    echo = bot.send_message(chat_id, 'Write name of action that you want to change', reply_markup=markup)
     bot.register_next_step_handler(message=echo, callback=enter_action)
 
 
@@ -83,14 +96,14 @@ def enter_action(message):
 def enter_new_action(message):
     actions.update({message.text: [action[0], action[1]]})
     action.clear()
-    bot.send_message(message.chat.id, "Your, action is successfully changed")
+    bot.send_message(message.chat.id, "Your action is successfully changed")
 
 
-@bot.message_handler(func=lambda mess: mess.text == 'Change time your action' and mess.content_type == 'text')
+@bot.message_handler(func=lambda mess: mess.text == 'Change time of your action' and mess.content_type == 'text')
 def change_action(mess):
     chat_id = mess.chat.id
     markup = types.ReplyKeyboardMarkup()
-    echo = bot.send_message(chat_id, 'Write what you want change', reply_markup=markup)
+    echo = bot.send_message(chat_id, 'Write name of action that you want to change', reply_markup=markup)
     bot.register_next_step_handler(message=echo, callback=enter_action_time)
 
 
@@ -109,14 +122,14 @@ def enter_action_time(message):
 def enter_new_time(message):
     actions.update({action[0]: [message.text, action[2]]})
     action.clear()
-    bot.send_message(message.chat.id, "Your, action time is successfully changed")
+    bot.send_message(message.chat.id, "Your action time is successfully changed")
 
 
 @bot.message_handler(func=lambda mess: mess.text == 'Review your actions' and mess.content_type == 'text')
 def review_action(mess):
     chat_id = mess.chat.id
     markup = types.ReplyKeyboardMarkup()
-    bot.send_message(chat_id, 'This is your action:', reply_markup=markup)
+    bot.send_message(chat_id, 'This is your actions:', reply_markup=markup)
     print(actions)
     for key in actions.keys():
         bot.send_message(chat_id, "{} - {}".format(key, actions.get(key)[0]))
@@ -133,9 +146,12 @@ def add_action(mess):
 def extract_name_action(message):
     action.append(message.text)
 
+    now = datetime.now()
+    current_time = now.strftime("%x:%X")
+    user_time = message.text
     echo = bot.send_message(message.chat.id,
                             'Please, add time of action\nPlease write time as month/day/year hh:mm:ss \n like '
-                            'this:05/08/20:20:27:20')
+                            'this: ' + current_time)
     bot.register_next_step_handler(message=echo, callback=extract_time_action)
 
 
@@ -154,6 +170,7 @@ def extract_time_action(message):
             action.append(message.chat.id)
             actions.update({action[0]: [action[1], action[2]]})
             action.clear()
+            bot.send_message(message.chat.id, 'action successfully added')
         else:
             echo = bot.send_message(message.chat.id, 'this date was in past, please write correct date')
             bot.register_next_step_handler(message=echo, callback=extract_time_action)
