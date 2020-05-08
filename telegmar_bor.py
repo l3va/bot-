@@ -7,12 +7,23 @@ import telebot
 from telebot import types
 import shelve
 
+import sqlite3
+
+conn = sqlite3.connect('information3.db')
+c = conn.cursor()
+
+# c.execute('''CREATE TABLE information10
+#             (chat_id text, task text, time text)''')
+
 bot_token = '1021378423:AAFgThDfpte4xWsUZrkqSxk8PnIQxsU_sGs'
 bot = telebot.TeleBot(bot_token)
 actions = {}
 action = []
 
-#ssssss
+durak = False
+
+
+# ssssss
 @bot.message_handler(commands=['start'])
 def start(mess):
     chat_id = mess.chat.id
@@ -26,11 +37,13 @@ def start(mess):
     btn_c = types.KeyboardButton('Remove all action')
     btn_d = types.KeyboardButton('Change your action')
     btn_e = types.KeyboardButton('Review your action')
-    markup.add(btn_a, btn_b, btn_c, btn_d, btn_e)
+    btn_f = types.KeyboardButton('ЩОТЧИК')
+    markup.add(btn_a, btn_b, btn_c, btn_d, btn_e, btn_f)
     bot.send_message(chat_id,
                      "Hello, I'm bot which remembering you plan, choose your "
                      "action ",
                      reply_markup=markup)
+
 
 
 @bot.message_handler(func=lambda
@@ -99,6 +112,20 @@ def e(mess):
             bot.send_message(chat_id, "{} - {}".format(key, actions.get(key)))
 
 
+@bot.message_handler(func=lambda mess: mess.text == 'ЩОТЧИК' and
+                                       mess.content_type == 'text')
+def f(mess):
+    chat_id = mess.chat.id
+    db = shelve.open('shelve')
+    state = db[str(chat_id)]
+    if state != 'init':
+        start(mess)
+    else:
+        # db[str(chat_id)] = 'Remove all action'
+        durak = True
+        db.close()
+
+
 @bot.message_handler(func=lambda mess: mess.text == 'Add action' and
                                        mess.content_type == 'text')
 def a(mess):
@@ -122,8 +149,9 @@ def extract_name_action(message):
     echo = bot.send_message(message.chat.id,
                             'Please, add time of action\nPlease write time as day/month/year hh:mm:ss')
 
-
     bot.register_next_step_handler(message=echo, callback=extract_time_action)
+
+
 def extract_time_action(message):
     user_time = message.text
     now = datetime.now()
@@ -175,34 +203,34 @@ def extract_time_action(message):
                             bot.send_message(message.chat.id, 'incorrect data')
                             return
 
-
-
-
-
-
-
-
-
     print("good")
     print(message.text)
     action.append(message.text)
     actions.update({action[0]: action[1]})
     action.clear()
     print("end function")
+    lox = True
+    #   def job():
 
-    def job():
+    while durak:
+        time.sleep(1)
         now = datetime.now()
         current_time = now.strftime("%x:%X")
-        print(current_time)
-        if user_time == current_time:
-            print("sadadassd")
-            bot.send_message(message.chat.id, actions.keys())
+        #        print(current_time)
+        for key in actions.keys():
+            if actions.get(key) == current_time:
+                #         print("sadadassd")
+                bot.send_message(message.chat.id, key)
+                lox = False
+                break
 
-    schedule.every(1).seconds.do(job)
-    schedule.run_pending()
-    while True:
-        schedule.run_pending()
-        time.sleep(0)
+
+#    schedule.every(1).seconds.do(job)
+#    schedule.run_pending()
+
+
+#        schedule.run_pending()
+#        time.sleep(1)
 
 
 # 05/07/20:21:27:20
