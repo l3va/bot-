@@ -25,7 +25,9 @@ def start(mess):
     button_change_time = types.KeyboardButton('Change time of your action')
     button_review = types.KeyboardButton('Review your actions')
     markup.add(button_add, button_remove, button_remove_all, button_change_name, button_change_time, button_review)
-    bot.send_message(chat_id, "Hi, this is time-manager just for you! Here you can schedule your actions, and in defined time we will remind you of planned action! Follow the instructions(give attention to the way of date writing). Good luck!", reply_markup=markup)
+    bot.send_message(chat_id,
+                     "Hi, this is time-manager just for you! Here you can schedule your actions, and in defined time we will remind you of planned action! Follow the instructions(give attention to the way of date writing). Good luck!",
+                     reply_markup=markup)
 
 
 @bot.message_handler(func=lambda mess: mess.text == 'Remove action' and mess.content_type == 'text')
@@ -41,7 +43,7 @@ def extracts_name_action(message):
         actions.pop(message.text)
         bot.send_message(message.chat.id, "action successfully deleted")
     else:
-        bot.send_message(message.chat.id, "incorrect action, please try again write action")
+        bot.send_message(message.chat.id, "incorrect action, try again next time, please select your choice")
 
 
 @bot.message_handler(func=lambda mess: mess.text == 'Remove all actions' and mess.content_type == 'text')
@@ -64,14 +66,16 @@ def confirm_clear_dict(message):
         markup = types.ReplyKeyboardMarkup()
         echo = bot.send_message(chat_id, 'Are you sure ?\n Write yes or no ', reply_markup=markup)
         bot.register_next_step_handler(message=echo, callback=confirm_clear_dict2)
+
+
 def confirm_clear_dict2(message):
-        if (message.text == "yes") or (message.text == "Yes"):
-            actions.clear()
-            bot.send_message(message.chat.id, "all actions are deleted")
-        elif (message.text == "no") or (message.text == "NO"):
-            bot.send_message(message.chat.id, "you denied remove all")
-        else:
-            bot.send_message(message.chat.id, "wrong input, choose another option")
+    if (message.text == "yes") or (message.text == "Yes"):
+        actions.clear()
+        bot.send_message(message.chat.id, "all actions are deleted")
+    elif (message.text == "no") or (message.text == "NO"):
+        bot.send_message(message.chat.id, "you denied remove all")
+    else:
+        bot.send_message(message.chat.id, "wrong input, choose another option")
 
 
 @bot.message_handler(func=lambda mess: mess.text == 'Change name of your action' and mess.content_type == 'text')
@@ -116,13 +120,32 @@ def enter_action_time(message):
         echo = bot.send_message(message.chat.id, 'Write new time')
         bot.register_next_step_handler(message=echo, callback=enter_new_time)
     else:
-        bot.send_message(message.chat.id, "incorrect time, please try again write time")
+        echo = bot.send_message(message.chat.id, "incorrect action, please try again write action")
+        bot.register_next_step_handler(message=echo, callback=enter_action_time)
 
 
 def enter_new_time(message):
-    actions.update({action[0]: [message.text, action[2]]})
-    action.clear()
-    bot.send_message(message.chat.id, "Your action time is successfully changed")
+    now = datetime.now()
+    print(now)
+    current_time = now.strftime("%x:%X")
+    user_time = message.text
+    print("Current Time =", current_time)
+    print("User Time =", message.text)
+
+    if re.match(pattern_date, message.text):
+        if current_time < user_time:
+            print("Ok")
+            action.append(message.text)
+            action.append(message.chat.id)
+            actions.update({action[0]: [message.text, action[2]]})
+            action.clear()
+            bot.send_message(message.chat.id, "Your action time is successfully changed")
+        else:
+            echo = bot.send_message(message.chat.id, 'this date was in past, please write correct date')
+            bot.register_next_step_handler(message=echo, callback=enter_new_time)
+    else:
+        echo = bot.send_message(message.chat.id, 'incorrect data, please write correct date')
+        bot.register_next_step_handler(message=echo, callback=enter_new_time)
 
 
 @bot.message_handler(func=lambda mess: mess.text == 'Review your actions' and mess.content_type == 'text')
